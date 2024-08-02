@@ -1,10 +1,6 @@
-const {
-  usersignup,
-} = require("../Model/userSchema");
- const { v4: uuidv4 } = require("uuid");
-const stripe = require("stripe")(
-  "sk_test_51IsiGeERaO9lvsvDadobGmPv6X817aNWoxTLY1w72DPPcZMi1Ihf2mMTThB0VNP1ZaGpF0dL33GA3eNOE16zLBkb00CtlKMuR9"
-);
+const { usersignup } = require("../Model/userSchema");
+const { v4: uuidv4 } = require("uuid");
+const stripe = require("stripe")(process.env.stripeSecretKey);
 exports.signup = async (req, res) => {
   const data = req.body;
   // console.log(data);
