@@ -1,4 +1,4 @@
-const { usersignup } = require("../Model/userSchema");
+const { usersignup, questionSchem } = require("../Model/userSchema");
 const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(process.env.stripeSecretKey);
 exports.signup = async (req, res) => {
@@ -83,4 +83,77 @@ exports.makePayment = (req, res) => {
       res.status(200).json(result);
     })
     .catch((err) => console.log(`error during the payment ${err}`));
+};
+
+exports.postQuestion = async (req, res) => {
+  try {
+    const { category } = req.body;
+    const questions = JSON.parse(req.body.questions);
+
+    // Handle file uploads
+    const categoryImage = req.files.categoryImage[0].filename;
+    const questionFiles = req.files.questionFiles;
+
+    // Find the category by name or create it if it doesn't exist
+    let categoryDoc = await questionSchem.findOne({ name: category });
+
+    if (!categoryDoc) {
+      // If the category does not exist, create a new one
+      categoryDoc = new questionSchem({
+        name: category,
+        image: categoryImage,
+        questions: [],
+      });
+    } else {
+      // If the category exists, update its image
+      categoryDoc.image = categoryImage;
+    }
+
+    // Process each question
+    questions.forEach((q, index) => {
+      const questionImage = questionFiles[index]
+        ? questionFiles[index].filename
+        : null;
+
+      categoryDoc.questions.push({
+        points: q.points,
+        question: q.question,
+        answer: q.answer,
+        image: questionImage,
+        answered: false, // Default value
+      });
+    });
+
+    // Save the category document
+    const savedCategory = await categoryDoc.save();
+
+    if (savedCategory) {
+      res.json({
+        success: true,
+        message: "Category and questions added successfully",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to add category and questions",
+      });
+    }
+  } catch (error) {
+    console.error("Error in postQuestion:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getAllQuestions = async (req, res) => {
+  try {
+    let questions = await questionSchem.find();
+    if (questions) {
+      res.json({ success: true, message: "questions got", data: questions });
+    } else {
+      res.json({ success: false });
+    }
+  } catch (error) {
+    res.json({ success: false });
+    console.log("error in getAllQuestions", error);
+  }
 };
