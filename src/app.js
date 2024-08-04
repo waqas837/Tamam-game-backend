@@ -5,6 +5,7 @@ const router = require("../routes");
 const app = express();
 const path = require("path");
 app.use(cors());
+require("../db")
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ limit: "500mb", extended: true }));
 var Port = process.env.PORT || 1000;

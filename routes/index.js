@@ -7,11 +7,15 @@ const {
   makePayment,
   postQuestion,
   getAllQuestions,
+  createGame,
+  getAllQuestionsForUser
 } = require("../controller/userLogics");
 // routes for user account
-router.post("/admin/signup", signup);
-router.post("/admin/signin", singin);
+router.post("/user/signup", signup);
+router.post("/user/signin", singin); 
+router.post("/user/createGame", createGame); 
 router.get("/admin/getAllQuestions", getAllQuestions);
+router.post("/user/getAllQuestionsForUser", getAllQuestionsForUser);
 router.post(
   "/admin/postQuestion",
   upload.fields([
