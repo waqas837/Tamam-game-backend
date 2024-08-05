@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 // / Sub-Schemas
 const UserQuestionSchema = new mongoose.Schema({
   answered: { type: Boolean, default: false },
@@ -22,13 +21,27 @@ const UserQuestionsSchema = new mongoose.Schema({
 const TeamSchema = new mongoose.Schema({
   teamName: { type: String, required: true },
   score: { type: Number, default: 0 },
-  Questions: [UserQuestionsSchema],
-  
+  solvedQuestion: [UserQuestionsSchema],
 });
 const GameSchema = new mongoose.Schema({
-  GameName:String,
+  GameName: String,
   Teams: [TeamSchema],
-  allQuestions:[]
+  allQuestions: [
+    {
+      _id: "ObjectId",
+      name: "String",
+      image: "String",
+      questions: [
+        {
+          answered: "Boolean",
+          question: "String",
+          points: "Number",
+          answer: "String",
+          _id: "ObjectId",
+        },
+      ],
+    },
+  ],
 });
 // Define each package type schema
 const FreePackageSchema = new mongoose.Schema({

@@ -188,23 +188,14 @@ exports.getAllQuestions = async (req, res) => {
 // This function is only getting the data for current game.
 exports.getAllQuestionsForUser = async (req, res) => {
   try {
-    let { categoriesIds } = req.body.metaData;
+    // let { categoriesIds } = req.body.metaData;
     let { _id } = req.body.userData;
-    // Assuming 'myGames' has references to categories or questions
-    let user = await usersignup.findById(_id);
-    // Filter myGames to only include the categories in categoriesIds
-    user.myGames = user.myGames.filter((gameId) =>
-      categoriesIds.includes(gameId.toString())
-    );
-    let result = await usersignup.populate(user, { path: "myGames" });
-    if (result) {
-      res.json({
-        success: true,
-        message: "Questions fetched successfully",
-        data: result.myGames,
-      });
+    let userCurrentPlayGame = await usersignup.findById(_id);
+    // console.log("userCurrentPlayGame", userCurrentPlayGame)
+    if (userCurrentPlayGame) {
+      res.json({ success: true, data: userCurrentPlayGame });
     } else {
-      res.json({ success: false, message: "No questions found" });
+      res.json({ success: false });
     }
   } catch (error) {
     res.json({ success: false, message: "Error in fetching questions" });
@@ -231,32 +222,32 @@ exports.createGame = async (req, res) => {
       _id: { $in: categoriesIds },
     });
     // console.log("results", results);
-    let GamesData = [
-      {
-        // Allowed to create 1 Game only
-        FreePackage: [
-          {
-            // Only one game is allowed if user has basic package
-            [gameName]: {
-              allQuestions: results.map((val) => val),
-              Teams: [
-                {
-                  teamName: team1,
-                  score: 0,
-                  Questions: [],
-                },
-                {
-                  teamName: team2,
-                  score: 0,
-                  Questions: [],
-                },
-                // Additional teams can be added here
-              ],
-            },
+    // You must check already using which pacakge to increase a new pacakge.
+    let GamesData = {
+      // Allowed to create 1 Game only
+      FreePackage: [
+        {
+          Game1: {
+            GameName: gameName,
+            allQuestions: results.map((val) => val),
+            Teams: [
+              {
+                teamName: team1,
+                score: 0,
+                solvedQuestion: [],
+              },
+              {
+                teamName: team2,
+                score: 0,
+                solvedQuestion: [],
+              },
+              // Additional teams can be added here
+            ],
           },
-        ],
-      },
-    ];
+          // Only one game is allowed if user has basic package
+        },
+      ],
+    };
 
     // create Game for every package
     const createYourGame = async (noOfGames, package) => {
@@ -268,7 +259,17 @@ exports.createGame = async (req, res) => {
             {
               myGames: GamesData,
             },
-            {new:true}
+            { new: true }
+          );
+          // console.log("createGame", createGame)
+        } else if (package === "basic") {
+          // we will create no. of games.
+          let createGame = await usersignup.findByIdAndUpdate(
+            { _id: userId },
+            {
+              myGames: GamesData,
+            },
+            { new: true }
           );
           // console.log("createGame", createGame)
         }
@@ -288,7 +289,7 @@ exports.createGame = async (req, res) => {
         res.json({ success: true, message: "Game was created successfully." });
       } else if (findUserData.myGames.FreePackage.length === 1) {
         console.log("LimitReached for Free Package");
-        res.json({success: false , message: "Limit Reached For Free Package" });
+        res.json({ success: false, message: "Limit Reached For Free Package" });
       }
     } else if (findUserData.currentPackage === "basic") {
       if (findUserData.myGames.BasicPackage.length < 1) {
@@ -326,5 +327,53 @@ exports.createGame = async (req, res) => {
   } catch (error) {
     console.log("Error in createGame", error);
     res.json({ success: false, message: "Error in creating game" });
+  }
+};
+
+exports.singleCorrectAnswer = async (req, res) => {
+  // console.log("rq.boyd", req.body);
+
+  let {
+    userid,
+    gameName,
+    categoryId,
+    questionId,
+    answer,
+    categories,
+    package,
+    correctTeam,
+    pointsGot,
+  } = req.body;
+
+  try {
+    const user = await usersignup.findById(userid);
+    // console.log({ userid, categoryId, questionId, pointsGot });
+    if (user.myGames.FreePackage) {
+      await usersignup.findOneAndUpdate(
+        {
+          _id: userid,
+          "myGames.FreePackage.0.Game1.allQuestions._id": categoryId,
+          "myGames.FreePackage.0.Game1.allQuestions.questions._id": questionId,
+        },
+        {
+          $set: {
+            "myGames.FreePackage.0.Game1.allQuestions.$[category].questions.$[question].answered": true,
+          },
+          $inc: {
+            "myGames.FreePackage.0.Game1.Teams.$[team].score": pointsGot,
+          },
+        },
+        {
+          arrayFilters: [
+            { "category._id": categoryId },
+            { "question._id": questionId },
+            { "team.teamName": correctTeam },
+          ],
+          new: true, // Optional: returns the updated document
+        }
+      );
+    }
+  } catch (error) {
+    console.error("Error updating document:", error);
   }
 };
