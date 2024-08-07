@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
 // insert many questions:
 
 // Import the Question model
-const { questionSchem } = require("../Model/userSchema");
+const { questionSchem, Category } = require("../Model/userSchema");
 
 // Example data array to be inserted
 const categories = [
@@ -332,7 +332,7 @@ const categories = [
 const insertCategories = async () => {
   try {
     // Insert the categories into the database
-    await questionSchem.insertMany(categories);
+    await Category.insertMany(categories);
     console.log("Categories inserted successfully!");
   } catch (err) {
     console.error("Error inserting categories:", err);
