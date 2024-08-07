@@ -57,7 +57,7 @@ exports.signup = async (req, res) => {
 //sign in data
 exports.singin = async (req, res) => {
   try {
-    const isExists = await Admin.findOne({
+    const isExists = await User.findOne({
       email: req.body.email,
       password: req.body.password,
     });
@@ -102,6 +102,8 @@ exports.adminsingin = async (req, res) => {
     } else {
       res.json({
         success: false,
+        message:"Your record not exits",
+        user: isExists,
       });
     }
   } catch (error) {
