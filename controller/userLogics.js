@@ -10,6 +10,7 @@ const {
   CreateGame,
   Team,
   Answer,
+  Admin,
 } = require("../Model/userSchema");
 const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(process.env.stripeSecretKey);
@@ -56,7 +57,35 @@ exports.signup = async (req, res) => {
 //sign in data
 exports.singin = async (req, res) => {
   try {
-    const isExists = await User.findOne({
+    const isExists = await Admin.findOne({
+      email: req.body.email,
+      password: req.body.password,
+    });
+    if (isExists) {
+      // Generate a token and send it in response
+      const token = jwt.sign({ userId: isExists._id }, "your_jwt_secret", {
+        expiresIn: "1h",
+      });
+      res.json({
+        success: true,
+        token,
+        user: isExists,
+      });
+    } else {
+      res.json({
+        success: false,
+      });
+    }
+  } catch (error) {
+    console.log(`error during sigin the data ${error}`);
+    console.log(error);
+    // res.json({err:error});
+  }
+};
+//sign in data
+exports.adminsingin = async (req, res) => {
+  try {
+    const isExists = await Admin.findOne({
       email: req.body.email,
       password: req.body.password,
     });
@@ -97,8 +126,9 @@ exports.makePayment = (req, res) => {
       stripe.charges.create(
         {
           // original account will be charged here,it recieves from the front end amount object value,for more details visit it ts file to for its object formulation
-          amount: totalPrice * 100,
-          currency: "pkr",
+          // stripe always uses lowest currency of your country
+          amount: totalPrice < 50 ? 50 : totalPrice,
+          currency: "USD",
           customer: customer.id,
 
           //we can send email after a successfull transanction
@@ -364,10 +394,13 @@ exports.createGame = async (req, res) => {
         console.log("error in createGame", error);
       }
     };
+    console.log(
+      "findUserData. currentPackage ",
+      findUserData.currentPackage.includes("free")
+    );
     //  we will first check if user has the free package used,
-    if (findUserData.currentPackage === "free") {
-      console.log("findUserData.myHostGames", findUserData.myHostGames.length);
-      if (findUserData.myHostGames.length) {
+    if (findUserData.currentPackage.includes("free")) {
+      if (findUserData.myHostGames.length < 1) {
         // Now you can create a game
         let gameid = await createYourGame(1, "free"); // we can get  any time.
         res.json({
@@ -375,27 +408,27 @@ exports.createGame = async (req, res) => {
           message: "Game was created successfully.",
           gameid,
         });
-      } else if (findUserData.myHostGames.length) {
+      } else if (findUserData.myHostGames.length === 1) {
         console.log("LimitReached for Free Package");
         res.json({ success: false, message: "Limit Reached For Free Package" });
       }
-    } else if (findUserData.currentPackage === "basic") {
-      if (findUserData.myHostGames.length > 1) {
+    } else if (findUserData.currentPackage.includes("basic")) {
+      if (findUserData.myHostGames.length < 2) {
         // Now you can create a game
-        createYourGame(1, "basic");
-      } else if (findUserData.myHostGames.length === 1) {
+        createYourGame(2, "basic");
+      } else if (findUserData.myHostGames.length === 2) {
         console.log("LimitReached for Basic Package");
         res.json({ message: "LimitReachedBasicPackage" });
       }
-    } else if (findUserData.currentPackage === "premium") {
-      if (findUserData.myHostGames.length < 2) {
+    } else if (findUserData.currentPackage.includes("premium")) {
+      if (findUserData.myHostGames.length < 3) {
         // Now you can create a game
-        createYourGame(2, "premium");
-      } else if (findUserData.myHostGames.length === 2) {
+        createYourGame(3, "premium");
+      } else if (findUserData.myHostGames.length === 3) {
         console.log("LimitReached for Premium Package");
         res.json({ message: "LimitReachedPremiumPackage" });
       }
-    } else if (findUserData.currentPackage === "elite") {
+    } else if (findUserData.currentPackage.includes("elite")) {
       if (findUserData.myHostGames.length < 5) {
         // Now you can create a game
         createYourGame(5, "elite");
@@ -403,11 +436,11 @@ exports.createGame = async (req, res) => {
         console.log("LimitReached for Elite Package");
         res.json({ message: "LimitReachedElitePackage" });
       }
-    } else if (findUserData.currentPackage === "diamond") {
-      if (findUserData.myHostGames.length < 10) {
+    } else if (findUserData.currentPackage.includes("diamond")) {
+      if (findUserData.myHostGames.length < 11) {
         // Now you can create a game
-        createYourGame(10, "diamond");
-      } else if (findUserData.myHostGames.length === 10) {
+        createYourGame(11, "diamond");
+      } else if (findUserData.myHostGames.length === 11) {
         console.log("LimitReached for dimond Package");
         res.json({ message: "LimitReachedDiamondPackage" });
       }
@@ -548,23 +581,60 @@ exports.fetchAllPackages = async (req, res) => {
     console.log("err", error);
   }
 };
+// buypackage
+exports.buypackage = async (req, res) => {
+  let { loggedInUser, PackagesId, PackageName } = req.params;
+  try {
+    console.log({ loggedInUser, PackagesId, PackageName });
+    let newData = await User.findByIdAndUpdate(
+      loggedInUser,
+      {
+        $addToSet: { currentPackage: ["free", PackageName] },
+      },
+      { new: true }
+    );
+    res.json({ success: true, data: newData });
+  } catch (error) {
+    console.log("err", error);
+  }
+};
 
+exports.deleteQuestion = async (req, res) => {
+  try {
+    await Question.findByIdAndDelete(req.body.questionId);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.deleteCategory = async (req, res) => {
+  try {
+    await Category.findByIdAndDelete(req.body.categoryId);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+  }
+};
 /////////////////////// Seed Packages /////////////////
 
 const packagesData = [
   {
+    name: "basic",
     img: "package1.png",
     text: "Basic features",
     price: 1,
     features: ["Basic support", "Basic access"],
   },
   {
+    name: "premium",
     img: "package2.png",
     text: "Premium features",
     price: 3,
     features: ["Premium support", "Extended access"],
   },
   {
+    name: "elite",
     img: "package3.png",
     text: "Elite features",
     price: 5,
@@ -572,6 +642,7 @@ const packagesData = [
     additionalBenefits: ["Extra content"],
   },
   {
+    name: "diamond",
     img: "package4.png",
     text: "Diamond features",
     price: 10,

@@ -129,7 +129,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String, required: true, unique: true },
-  currentPackage: { type: String, default: "free" },
+  currentPackage: { type: [String], default: ["free"] }, // Corrected syntax
   myHostGames: [
     { type: mongoose.mongoose.Schema.Types.ObjectId, ref: "MyGame" },
   ],
@@ -153,6 +153,7 @@ const UserSchema = new mongoose.Schema({
 
 // Define schemas with multiple references to the User schema
 const BasicPackageSchema = new mongoose.Schema({
+  name: String,
   title: { type: String, default: "Basic Package" },
   description: {
     type: String,
@@ -165,6 +166,7 @@ const BasicPackageSchema = new mongoose.Schema({
 });
 
 const FreePackageSchema = new mongoose.Schema({
+  name: String,
   title: { type: String, default: "Free Package" },
   description: { type: String, default: "Basic features available for free." },
   features: { type: [String], default: ["Basic support", "Limited access"] },
@@ -173,6 +175,7 @@ const FreePackageSchema = new mongoose.Schema({
 });
 
 const PremiumPackageSchema = new mongoose.Schema({
+  name: String,
   title: { type: String, default: "Premium Package" },
   description: {
     type: String,
@@ -185,6 +188,7 @@ const PremiumPackageSchema = new mongoose.Schema({
 });
 
 const ElitePackageSchema = new mongoose.Schema({
+  name: String,
   title: { type: String, default: "Elite Package" },
   description: { type: String, default: "All features with priority support." },
   price: { type: Number, default: 5 },
@@ -195,6 +199,7 @@ const ElitePackageSchema = new mongoose.Schema({
 });
 
 const DiamondPackageSchema = new mongoose.Schema({
+  name: String,
   title: { type: String, default: "Diamond Package" },
   description: {
     type: String,
@@ -248,7 +253,7 @@ const AnswerSchema = mongoose.Schema({
     required: true,
   },
   answered: { type: Boolean, default: false },
-  teamId:{ type: String },
+  teamId: { type: String },
 });
 
 // This may not Needed
@@ -261,7 +266,11 @@ const PaymentInfoSchema = new mongoose.Schema({
   users: [{ type: mongoose.mongoose.Schema.Types.ObjectId, ref: "User" }],
   // Additional fields specific to PaymentInfo
 });
-
+const AdminSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
 // Create models for each schema
 const User = mongoose.model("User", UserSchema);
 const FreePackage = mongoose.model("FreePackage", FreePackageSchema);
@@ -275,7 +284,8 @@ const CreateGame = mongoose.model("MyGame", MyGamesSchema);
 const Team = mongoose.model("Team", TeamSchema);
 const Answer = mongoose.model("Answer", AnswerSchema);
 const Score = mongoose.model("Score", ScoreSchema);
-const PaymentInfo = mongoose.model("PaymentInfo", PaymentInfoSchema);
+const PaymentInfo = mongoose.model("PaymentInfo", PaymentInfoSchema); 
+const Admin = mongoose.model("AdminSchema", AdminSchema);
 
 // Export models
 module.exports = {
@@ -294,4 +304,5 @@ module.exports = {
   Question,
   Category,
   Answer,
+  Admin
 };

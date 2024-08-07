@@ -12,16 +12,25 @@ const {
   singleCorrectAnswer,
   startovergame,
   fetchAllPackages,
+  buypackage,
+  adminsingin,
+  deleteCategory,
+  deleteQuestion,
 } = require("../controller/userLogics");
 // routes for user account
 router.post("/user/signup", signup);
 router.post("/user/signin", singin);
+router.post("/admin/signin", adminsingin);
 router.post("/user/createGame", createGame);
 router.get("/admin/getAllQuestions", getAllQuestions);
 router.post("/user/getAllQuestionsForUser", getAllQuestionsForUser);
 router.post("/user/singleCorrectAnswer", singleCorrectAnswer);
 router.post("/user/startovergame/:userid/:gameid", startovergame);
 router.post("/user/payment", makePayment);
+router.post(
+  "/user/buypackage/:loggedInUser/:PackagesId/:PackageName",
+  buypackage
+);
 router.post(
   "/admin/postQuestion",
   upload.fields([
@@ -33,5 +42,7 @@ router.post(
 
 // New Routes //
 router.get("/user/fetchAllPackages", fetchAllPackages);
+router.delete("/admin/deleteQuestion", deleteQuestion);
+router.delete("/admin/deleteCategory", deleteCategory);
 
 module.exports = router;
