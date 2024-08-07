@@ -116,7 +116,7 @@ exports.makePayment = (req, res) => {
   const { totalPrice, token } = req.body;
   // console.log(totalPrice,token)
   const idempotencyKey = uuidv4(); //so that user don't be doubled charged from the same product
-  //just in the reallity //we create stripe.customer.create({email,source:tokenid}).then((customer)=>) stripe.create a stripe.charges.create({amount:product.price*100,currency:"usd",customer:customer.id,receipt_email:token.email,description:product.name},{idempotencyKey on this transactoin}).then(result).catch(err)
+
   return stripe.customers
     .create({
       email: token.email,
@@ -506,46 +506,8 @@ exports.startovergame = async (req, res) => {
       console.log(`User not found for userid: ${userid}`);
       return res.json({ success: false, message: "User not found" });
     }
-    console.log("findUserData", findUserData);
+    // console.log("findUserData", findUserData);
     // We will first find our data for put.
-    // 1. First find categoreis
-    // const results = await questionSchem.find({
-    //   _id: { $in: categoriesIds },
-    // });
-    // console.log("results", results);
-    // You must check already using which pacakge to increase a new pacakge.
-    // let GamesData = {
-    //   // Allowed to create 1 Game only
-    //   FreePackage: [
-    //     {
-    //       Game1: {
-    //         GameName: gameName,
-    //         allQuestions: results.map((val) => val),
-    //         Teams: [
-    //           {
-    //             teamName: team1,
-    //             score: 0,
-    //             solvedQuestion: [],
-    //           },
-    //           {
-    //             teamName: team2,
-    //             score: 0,
-    //             solvedQuestion: [],
-    //           },
-    //           // Additional teams can be added here
-    //         ],
-    //       },
-    //       // Only one game is allowed if user has basic package
-    //     },
-    //   ],
-    // };
-    // let createGame = await usersignup.findByIdAndUpdate(
-    //   { _id },
-    //   {
-    //     myGames: GamesData,
-    //   },
-    //   { new: true }
-    // );
   } catch (error) {
     console.log("Error in createGame", error);
     res.json({ success: false, message: "Error in creating game" });
