@@ -543,7 +543,6 @@ exports.fetchAllPackages = async (req, res) => {
       ...elitePackages.map((pkg) => ({ ...pkg.toObject(), type: "Elite" })),
       ...diamondPackages.map((pkg) => ({ ...pkg.toObject(), type: "Diamond" })),
     ];
-    console.log("allPackages", allPackages);
     res.json({ success: true, data: allPackages });
   } catch (error) {
     console.log("err", error);

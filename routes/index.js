@@ -11,17 +11,17 @@ const {
   getAllQuestionsForUser,
   singleCorrectAnswer,
   startovergame,
-  fetchAllPackages
+  fetchAllPackages,
 } = require("../controller/userLogics");
 // routes for user account
 router.post("/user/signup", signup);
-router.post("/user/signin", singin); 
-router.post("/user/createGame", createGame); 
+router.post("/user/signin", singin);
+router.post("/user/createGame", createGame);
 router.get("/admin/getAllQuestions", getAllQuestions);
-router.post("/user/getAllQuestionsForUser", getAllQuestionsForUser); 
-router.post("/user/singleCorrectAnswer", singleCorrectAnswer); 
+router.post("/user/getAllQuestionsForUser", getAllQuestionsForUser);
+router.post("/user/singleCorrectAnswer", singleCorrectAnswer);
 router.post("/user/startovergame/:userid/:gameid", startovergame);
-
+router.post("/user/payment", makePayment);
 router.post(
   "/admin/postQuestion",
   upload.fields([
@@ -30,13 +30,8 @@ router.post(
   ]),
   postQuestion
 );
-// payment method
-router.post("/payment", makePayment);
-
 
 // New Routes //
 router.get("/user/fetchAllPackages", fetchAllPackages);
-
-
 
 module.exports = router;
