@@ -16,6 +16,8 @@ const {
   adminsingin,
   deleteCategory,
   deleteQuestion,
+  getAllUsers,
+  deleteUser,
 } = require("../controller/userLogics");
 // routes for user account
 router.post("/user/signup", signup);
@@ -23,6 +25,7 @@ router.post("/user/signin", singin);
 router.post("/admin/signin", adminsingin);
 router.post("/user/createGame", createGame);
 router.get("/admin/getAllQuestions", getAllQuestions);
+router.get("/admin/getAllUsers", getAllUsers);
 router.post("/user/getAllQuestionsForUser", getAllQuestionsForUser);
 router.post("/user/singleCorrectAnswer", singleCorrectAnswer);
 router.post("/user/startovergame/:userid/:gameid", startovergame);
@@ -44,5 +47,7 @@ router.post(
 router.get("/user/fetchAllPackages", fetchAllPackages);
 router.delete("/admin/deleteQuestion", deleteQuestion);
 router.delete("/admin/deleteCategory", deleteCategory);
+router.delete("/admin/deleteUser", deleteUser);
+
 
 module.exports = router;

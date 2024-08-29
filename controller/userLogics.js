@@ -102,7 +102,7 @@ exports.adminsingin = async (req, res) => {
     } else {
       res.json({
         success: false,
-        message:"Your record not exits",
+        message: "Your record not exits",
         user: isExists,
       });
     }
@@ -239,6 +239,20 @@ exports.getAllQuestions = async (req, res) => {
   }
 };
 
+exports.getAllUsers = async (req, res) => {
+  try {
+    let users = await User.find();
+    if (users) {
+      res.json({ success: true, message: "users got", data: users });
+    } else {
+      res.json({ success: false });
+    }
+  } catch (error) {
+    res.json({ success: false });
+    console.log("error in getAllusers", error);
+  }
+};
+
 // This function is only getting the data for current game.
 exports.getAllQuestionsForUser = async (req, res) => {
   try {
@@ -276,14 +290,16 @@ exports.getAllQuestionsForUser = async (req, res) => {
         GameData.categories.map(async (val) => {
           let categories_itself = val;
           // Fetch the questions data for the current category
+          // console.log("teams[0]._id,",teams[0]._id)
           const answers = await Answer.find({
             teamId: teams[0]._id,
             question: { $in: categories_itself.questions.map((q) => q._id) },
           }).populate("question");
           // Populate 'question' field
           // Extract the answer data, including 'answered' field
+          // console.log("is need thing is missed??",answers.map((val)=>val.question._id.toString()))
           let questionData = answers.map((answer) => ({
-            _id: answer.question._id.toString(),
+            _id: answer.question._id,
             points: answer.question.points,
             question: answer.question.text,
             image: answer.question.image,
@@ -372,6 +388,10 @@ exports.createGame = async (req, res) => {
             results.map(async (category) => {
               await Promise.all(
                 category.questions.map(async (questionId) => {
+                  console.log({
+                    question: questionId,
+                    teamId: team1Data._id,
+                  });
                   await new Answer({
                     question: questionId,
                     teamId: team1Data._id,
@@ -502,7 +522,7 @@ exports.startovergame = async (req, res) => {
     let { userid, gameid } = req.params;
     console.log("userid, gameid", userid, gameid);
     // First, find data of this user
-    let findUserData = await usersignup.findOne({ _id: userid });
+    let findUserData = await User.findOne({ _id: userid });
 
     if (!findUserData) {
       console.log(`User not found for userid: ${userid}`);
@@ -575,6 +595,15 @@ exports.deleteQuestion = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     await Category.findByIdAndDelete(req.body.categoryId);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.body.userId);
     res.json({ success: true });
   } catch (error) {
     console.log(error);

@@ -5,6 +5,8 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String, required: true, unique: true },
+  moneySpent: { type: String },
+  status: { type: String }, // login or logout; status will be offline or online
   currentPackage: { type: [String], default: ["free"] }, // Corrected syntax
   myHostGames: [
     { type: mongoose.mongoose.Schema.Types.ObjectId, ref: "MyGame" },
@@ -160,7 +162,7 @@ const CreateGame = mongoose.model("MyGame", MyGamesSchema);
 const Team = mongoose.model("Team", TeamSchema);
 const Answer = mongoose.model("Answer", AnswerSchema);
 const Score = mongoose.model("Score", ScoreSchema);
-const PaymentInfo = mongoose.model("PaymentInfo", PaymentInfoSchema); 
+const PaymentInfo = mongoose.model("PaymentInfo", PaymentInfoSchema);
 const Admin = mongoose.model("AdminSchema", AdminSchema);
 
 // Export models
@@ -180,5 +182,5 @@ module.exports = {
   Question,
   Category,
   Answer,
-  Admin
+  Admin,
 };
