@@ -145,7 +145,6 @@ const PaymentInfoSchema = new mongoose.Schema({
   // Additional fields specific to PaymentInfo
 });
 const AdminSchema = new mongoose.Schema({
-  username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 });

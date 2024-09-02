@@ -614,21 +614,21 @@ exports.deleteUser = async (req, res) => {
 const packagesData = [
   {
     name: "basic",
-    img: "package1.png",
+    img: "card1.png",
     text: "Basic features",
     price: 1,
     features: ["Basic support", "Basic access"],
   },
   {
     name: "premium",
-    img: "package2.png",
+    img: "card2.png",
     text: "Premium features",
     price: 3,
     features: ["Premium support", "Extended access"],
   },
   {
     name: "elite",
-    img: "package3.png",
+    img: "card3.png",
     text: "Elite features",
     price: 5,
     features: ["Priority support", "Full access"],
@@ -636,7 +636,7 @@ const packagesData = [
   },
   {
     name: "diamond",
-    img: "package4.png",
+    img: "card4.png",
     text: "Diamond features",
     price: 10,
     features: ["Exclusive support", "Exclusive content", "Full access"],
