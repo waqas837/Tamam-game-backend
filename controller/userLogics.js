@@ -17,7 +17,7 @@ const stripe = require("stripe")(process.env.stripeSecretKey);
 const jwt = require("jsonwebtoken"); // For creating tokens
 
 exports.signup = async (req, res) => {
-  const { username, email, password, phone } = req.body;
+  const { firstName, lastName, email, password, phone } = req.body;
 
   try {
     // Check if email or phone number already exists
@@ -33,7 +33,8 @@ exports.signup = async (req, res) => {
 
     // Create new user
     const newUser = new User({
-      username,
+      firstName,
+      lastName,
       email,
       password, // Store password as plain text
       phone,
@@ -46,9 +47,12 @@ exports.signup = async (req, res) => {
       expiresIn: "1h",
     });
 
-    res
-      .status(201)
-      .json({ message: "User created successfully", token, user: newUser });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      token,
+      user: newUser,
+    });
   } catch (error) {
     console.error("Error during signup:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -271,10 +275,11 @@ exports.getAllQuestionsForUser = async (req, res) => {
       })
         .populate({ path: "categories", model: "Category" })
         .populate({ path: "teams", model: "Team" });
+      let moneySpent = GameDetails.moneySpent;
       if (!GameData) {
         return res.json({ success: false, message: "Game data not found." });
       } else {
-        res.json({ success: true, YourGames: GameData });
+        res.json({ success: true, YourGames: GameData, moneySpent });
       }
     } else {
       // get only created Game
