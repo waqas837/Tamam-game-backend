@@ -644,7 +644,7 @@ const packagesData = [
     name: "premium",
     img: "card2.png",
     text: "Premium features",
-    price: 3,
+    price: 2,
     features: ["Premium support", "Extended access"],
   },
   {
