@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String, required: true, unique: true },
-  moneySpent: { type: String },
+  moneySpent: { type: String, default:0 },
   status: { type: String }, // login or logout; status will be offline or online
   currentPackage: { type: [String], default: ["free"] }, // Corrected syntax
   myHostGames: [
@@ -120,6 +120,15 @@ const MyGamesSchema = new mongoose.Schema({
 const TeamSchema = new mongoose.Schema({
   name: String,
   score: { type: Number, default: 0 },
+  usedAxiliaryMeans: {
+    type: Object,
+    default: {
+      women: false,
+      light: false,
+      rating: false,
+      hand: false,
+    },
+  },
   answers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Answer" }],
 });
 

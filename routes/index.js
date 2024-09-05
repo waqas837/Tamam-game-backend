@@ -18,6 +18,7 @@ const {
   deleteQuestion,
   getAllUsers,
   deleteUser,
+  useauxilarymean,
 } = require("../controller/userLogics");
 // routes for user account
 router.post("/user/signup", signup);
@@ -48,6 +49,7 @@ router.get("/user/fetchAllPackages", fetchAllPackages);
 router.delete("/admin/deleteQuestion", deleteQuestion);
 router.delete("/admin/deleteCategory", deleteCategory);
 router.delete("/admin/deleteUser", deleteUser);
+router.put("/user/use-auxiliary-mean", useauxilarymean);
 
 
 module.exports = router;

@@ -298,12 +298,16 @@ exports.getAllQuestionsForUser = async (req, res) => {
           // Populate 'question' field
           // Extract the answer data, including 'answered' field
           // console.log("is need thing is missed??",answers.map((val)=>val.question._id.toString()))
+          // console.log(answers.map((answers)=>{
+          //   console.log("make a test",answers.question)
+          // }))
           let questionData = answers.map((answer) => ({
             _id: answer.question._id,
             points: answer.question.points,
-            question: answer.question.text,
+            question: answer.question.question,
             image: answer.question.image,
-            answered: answer.answered, // Directly include the 'answered' field from the 'Answer' document
+            answered: answer.answered, // Directly include the 'answered' field from the answer
+            answer: answer.question.answer,
           }));
 
           return {
@@ -315,19 +319,19 @@ exports.getAllQuestionsForUser = async (req, res) => {
         })
       );
 
-      let questionIDs = GameData.categories.flatMap(
-        (category) => category.questions
-      );
+      // let questionIDs = GameData.categories.flatMap(
+      //   (category) => category.questions
+      // );
       // Fetch answers related to the question IDs
-      let answerData = await Answer.find({
-        question: { $in: questionIDs },
-      }).populate("question");
+      // let answerData = await Answer.find({
+      //   question: { $in: questionIDs },
+      // }).populate("question");
 
       let LongInfo = {
         GameDetails,
         teams,
         myGames,
-        answerData,
+        // answerData,
         categoriesWithQuestions,
       };
       if (!GameData) {
@@ -388,10 +392,6 @@ exports.createGame = async (req, res) => {
             results.map(async (category) => {
               await Promise.all(
                 category.questions.map(async (questionId) => {
-                  console.log({
-                    question: questionId,
-                    teamId: team1Data._id,
-                  });
                   await new Answer({
                     question: questionId,
                     teamId: team1Data._id,
@@ -604,6 +604,22 @@ exports.deleteCategory = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     await User.findByIdAndDelete(req.body.userId);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.useauxilarymean = async (req, res) => {
+  try {
+    await Team.findByIdAndUpdate(
+      { _id: req.body.teamId },
+      {
+        $set: {
+          [`usedAxiliaryMeans.${req.body.mean}`]: { $not: req.body.mean },
+        },
+      }
+    );
     res.json({ success: true });
   } catch (error) {
     console.log(error);
