@@ -525,8 +525,7 @@ exports.singleCorrectAnswer = async (req, res) => {
 exports.startovergame = async (req, res) => {
   try {
     let { userid, gameid } = req.params;
-    console.log("userid, gameid", userid, gameid);
-    // First, find data of this user
+     // First, find data of this user
     let findUserData = await User.findOne({ _id: userid });
 
     if (!findUserData) {
