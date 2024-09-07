@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phone: { type: String, required: true, unique: true },
   moneySpent: { type: String, default: 0 },
+  remainingGames: { type: String, default: 0 },
   status: { type: String }, // login or logout; status will be offline or online
   currentPackage: { type: [String], default: ["free"] }, // Corrected syntax
   myHostGames: [
