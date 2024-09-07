@@ -141,7 +141,7 @@ const AnswerSchema = mongoose.Schema({
     required: true,
   },
   answered: { type: Boolean, default: false },
-  teamId: { type: String },
+  gameid: { type: String },
 });
 
 // This may not Needed

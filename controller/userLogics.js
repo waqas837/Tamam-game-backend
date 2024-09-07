@@ -296,22 +296,18 @@ exports.getAllQuestionsForUser = async (req, res) => {
           let categories_itself = val;
           // Fetch the questions data for the current category
           // console.log("teams[0]._id,",teams[0]._id)
-          const answers = await Answer.find({
-            teamId: teams[0]._id,
+
+          let answer = await Answer.find({
+            gameid: req.body.gameId,
             question: { $in: categories_itself.questions.map((q) => q._id) },
           }).populate("question");
-          // Populate 'question' field
-          // Extract the answer data, including 'answered' field
-          // console.log("is need thing is missed??",answers.map((val)=>val.question._id.toString()))
-          // console.log(answers.map((answers)=>{
-          //   console.log("make a test",answers.question)
-          // }))
-          let questionData = answers.map((answer) => ({
+
+          let questionData = answer.map((answer) => ({
             _id: answer.question._id,
             points: answer.question.points,
             question: answer.question.question,
             image: answer.question.image,
-            answered: answer.answered, // Directly include the 'answered' field from the answer
+            answered: answer.answered,
             answer: answer.question.answer,
           }));
 
@@ -354,7 +350,6 @@ exports.getAllQuestionsForUser = async (req, res) => {
 exports.createGame = async (req, res) => {
   try {
     let { userId, categoriesIds, gameName, team1, team2 } = req.body;
-
     // First, find data of this user
     let findUserData = await User.findOne({ _id: userId });
     if (!findUserData) {
@@ -366,49 +361,47 @@ exports.createGame = async (req, res) => {
     const createYourGame = async (NoOfGames, package) => {
       try {
         if (package === "free") {
-          // 1. First find categoreis
+          // 1. Find categories
           const results = await Category.find({
             _id: { $in: categoriesIds },
           });
-
-          // 1. Create New Teams
-          let team1Data = await new Team({ name: team1 }).save();
-          let team2Data = await new Team({ name: team2 }).save();
-
-          // 2. Collect all category IDs
           const allCategoryIds = results.map((category) => category._id);
 
-          // 3. Create a new Game with all categories and teams
+          // 2. Create New Teams
+          let team1Data = await new Team({ name: team1 }).save();
+          if (!team1Data) throw new Error("Failed to create team1");
+
+          let team2Data = await new Team({ name: team2 }).save();
+          if (!team2Data) throw new Error("Failed to create team2");
+          // 4. Create a new Game with all categories and teams
           let createdGame = await new CreateGame({
             GameName: gameName,
             categories: allCategoryIds,
             teams: [team1Data._id, team2Data._id],
           }).save();
 
-          // 4. Update User's myHostGames array with the new game ID
+          // 3. Create Answer documents for each question in each category
+          await Promise.all(
+            results.flatMap((category) =>
+              category.questions.map((questionId) =>
+                new Answer({
+                  question: questionId,
+                  gameid: createdGame._id,
+                }).save()
+              )
+            )
+          );
+
+          // 5. Update User's myHostGames array with the new game ID
           await User.findByIdAndUpdate(
             { _id: userId },
             { $push: { myHostGames: createdGame._id } },
             { new: true }
           );
 
-          // 5. Create Answer documents for each question in each category
-          await Promise.all(
-            results.map(async (category) => {
-              await Promise.all(
-                category.questions.map(async (questionId) => {
-                  await new Answer({
-                    question: questionId,
-                    teamId: team1Data._id,
-                  }).save();
-                })
-              );
-            })
-          );
           return createdGame._id;
-          // console.log("createGame", createGame)
         } else if (package === "basic") {
-          // we will create no. of games.
+          // Create no. of games
           let createGame = await User.findByIdAndUpdate(
             { _id: userId },
             {
@@ -418,9 +411,10 @@ exports.createGame = async (req, res) => {
           );
         }
       } catch (error) {
-        console.log("error in createGame", error);
+        console.error("Error in createGame", error);
       }
     };
+
     console.log(
       "findUserData. currentPackage ",
       findUserData.currentPackage.includes("free")
@@ -482,6 +476,7 @@ exports.singleCorrectAnswer = async (req, res) => {
   // console.log("rq.boyd", req.body);
 
   let {
+    gameid,
     userid,
     gameName,
     categoryId,
@@ -503,12 +498,15 @@ exports.singleCorrectAnswer = async (req, res) => {
     //   correctTeam,
     //   teamid,
     // });
+    console.log({ question: questionId, teamId: teamid });
+
     await Answer.findOneAndUpdate(
-      { question: questionId, teamId: teamid },
-      { $set: { answered: true } },
+      { question: questionId, gameid: gameid },
+      { answered: true },
       { new: true }
     );
 
+    // console.log("data", data);
     await Team.findOneAndUpdate(
       { _id: teamid },
       { $inc: { score: pointsGot } },
@@ -525,7 +523,7 @@ exports.singleCorrectAnswer = async (req, res) => {
 exports.startovergame = async (req, res) => {
   try {
     let { userid, gameid } = req.params;
-     // First, find data of this user
+    // First, find data of this user
     let findUserData = await User.findOne({ _id: userid });
 
     if (!findUserData) {
