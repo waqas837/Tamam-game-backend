@@ -160,54 +160,52 @@ exports.makePayment = (req, res) => {
     .catch((err) => console.log(`error during the payment ${err}`));
 };
 
+// Controller
 exports.postQuestion = async (req, res) => {
   try {
     const { category } = req.body;
     const questions = JSON.parse(req.body.questions);
 
-    // Handle file uploads
     const categoryImage = req.files.categoryImage[0].filename;
-    const questionFiles = req.files.questionFiles;
-
-    // Find the category by name or create it if it doesn't exist
+    const questionFiles = req.files.questionFiles || [];
+    const answerDocuments = req.files.answerDocument || [];
     let categoryDoc = await Category.findOne({ name: category });
 
     if (!categoryDoc) {
-      // If the category does not exist, create a new one
       categoryDoc = new Category({
         name: category,
         image: categoryImage,
-        questions: [], // Initialize with an empty array
+        questions: [],
       });
     } else {
-      // If the category exists, update its image
       categoryDoc.image = categoryImage;
-      // Note: We're not clearing existing questions
     }
 
     const savePromises = questions.map((q, index) => {
-      const questionImage = questionFiles[index].filename;
+      const questionImage = questionFiles[index]
+        ? questionFiles[index].filename
+        : null;
+      const document = answerDocuments[index]
+        ? answerDocuments[index].filename
+        : null;
 
-      // Create and save the Question instance
       return new Question({
         points: q.points,
         question: q.question,
         answer: q.answer,
         image: questionImage,
+        document,
         category: categoryDoc._id,
       }).save();
     });
 
-    // Execute all save promises concurrently
     const savedQuestions = await Promise.all(savePromises);
 
-    // Add the new question IDs to the category's existing questions
     categoryDoc.questions = [
       ...categoryDoc.questions,
       ...savedQuestions.map((q) => q._id),
     ];
 
-    // Save the category document with the updated questions array
     const savedCategory = await categoryDoc.save();
 
     if (savedCategory) {
@@ -307,6 +305,7 @@ exports.getAllQuestionsForUser = async (req, res) => {
             points: answer.question.points,
             question: answer.question.question,
             image: answer.question.image,
+            document: answer.question.document,
             answered: answer.answered,
             answer: answer.question.answer,
           }));

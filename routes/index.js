@@ -38,8 +38,9 @@ router.post(
 router.post(
   "/admin/postQuestion",
   upload.fields([
-    { name: "categoryImage", maxCount: 1 },
-    { name: "questionFiles", maxCount: 6 },
+    { name: "categoryImage", maxCount: 200 },
+    { name: "questionFiles", maxCount: 200 },
+    { name: "answerDocument", maxCount: 200 },
   ]),
   postQuestion
 );

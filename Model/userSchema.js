@@ -109,6 +109,7 @@ const QuestionSchema = new mongoose.Schema({
   question: String,
   answer: String,
   image: String,
+  document: String,
   // Additional fields specific to Question
 });
 
