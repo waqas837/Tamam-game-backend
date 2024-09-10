@@ -160,6 +160,39 @@ exports.makePayment = (req, res) => {
     .catch((err) => console.log(`error during the payment ${err}`));
 };
 
+//make transaction
+exports.transaction = async (req, res) => {
+  try {
+    let { userid, price, packageId } = req.body;
+    price = Number(price);
+    // Find all transactions for the user and sum the prices
+    const transactions = await User.findById(userid);
+    let oldSpent = transactions.moneySpent;
+    let moneySpent = Number(oldSpent) + Number(price);
+    let currrentPackageUpdate;
+    if (price === 1) {
+      currrentPackageUpdate = "basic";
+    }
+    if (price === 2) {
+      currrentPackageUpdate = "premium";
+    }
+    if (price === 5) {
+      currrentPackageUpdate = "elite";
+    }
+    if (price === 10) {
+      currrentPackageUpdate = "diamond";
+    }
+    // Update the user's total money spent
+    await User.findByIdAndUpdate(userid, {
+      $set: { moneySpent, currentPackage: currrentPackageUpdate },
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.log("error", error);
+    res.json({ success: true });
+  }
+};
+
 // Controller
 exports.postQuestion = async (req, res) => {
   try {
@@ -194,6 +227,7 @@ exports.postQuestion = async (req, res) => {
         question: q.question,
         answer: q.answer,
         image: questionImage,
+        hint: q.hint,
         document,
         category: categoryDoc._id,
       }).save();
@@ -261,11 +295,13 @@ exports.getAllQuestionsForUser = async (req, res) => {
     let { _id } = req.body.userData;
     // Fetch game details for the user
     let GameDetails = await User.findById(_id).populate("myHostGames");
+
     if (!GameDetails || !GameDetails.myHostGames.length) {
       return res.json({ success: false, message: "No games found for user." });
     }
 
     if (req.body.fetchAllGames) {
+      console.log("fetchAllGames");
       // Get All games
       let myGames = GameDetails.myHostGames;
       let GameData = await CreateGame.find({
@@ -274,10 +310,40 @@ exports.getAllQuestionsForUser = async (req, res) => {
         .populate({ path: "categories", model: "Category" })
         .populate({ path: "teams", model: "Team" });
       let moneySpent = GameDetails.moneySpent;
+      let package = GameDetails.currentPackage[0];
+      console.log("package", package);
+      // Calculate remaining Games
+      let remainingGames;
+      if (package === "free") {
+        let allowedToCreateGames = 1;
+        let createdGames = GameDetails.myHostGames.length;
+        remainingGames = allowedToCreateGames - createdGames;
+      } else if (package === "basic") {
+        let allowedToCreateGames = 2;
+        let createdGames = GameDetails.myHostGames.length;
+        remainingGames = allowedToCreateGames - createdGames;
+      } else if (package === "premium") {
+        let allowedToCreateGames = 3;
+        let createdGames = GameDetails.myHostGames.length;
+        remainingGames = allowedToCreateGames - createdGames;
+      } else if (package === "elite") {
+        let allowedToCreateGames = 6;
+        let createdGames = GameDetails.myHostGames.length;
+        remainingGames = allowedToCreateGames - createdGames;
+      } else if (package === "diamond") {
+        let allowedToCreateGames = 11;
+        let createdGames = GameDetails.myHostGames.length;
+        remainingGames = allowedToCreateGames - createdGames;
+      }
       if (!GameData) {
         return res.json({ success: false, message: "Game data not found." });
       } else {
-        res.json({ success: true, YourGames: GameData, moneySpent });
+        res.json({
+          success: true,
+          YourGames: GameData,
+          moneySpent,
+          remainingGames,
+        });
       }
     } else {
       // get only created Game
@@ -331,7 +397,6 @@ exports.getAllQuestionsForUser = async (req, res) => {
         GameDetails,
         teams,
         myGames,
-        // answerData,
         categoriesWithQuestions,
       };
       if (!GameData) {
@@ -400,24 +465,172 @@ exports.createGame = async (req, res) => {
 
           return createdGame._id;
         } else if (package === "basic") {
-          // Create no. of games
-          let createGame = await User.findByIdAndUpdate(
+          // 1. Find categories
+          const results = await Category.find({
+            _id: { $in: categoriesIds },
+          });
+          const allCategoryIds = results.map((category) => category._id);
+
+          // 2. Create New Teams
+          let team1Data = await new Team({ name: team1 }).save();
+          if (!team1Data) throw new Error("Failed to create team1");
+
+          let team2Data = await new Team({ name: team2 }).save();
+          if (!team2Data) throw new Error("Failed to create team2");
+          // 4. Create a new Game with all categories and teams
+          let createdGame = await new CreateGame({
+            GameName: gameName,
+            categories: allCategoryIds,
+            teams: [team1Data._id, team2Data._id],
+          }).save();
+
+          // 3. Create Answer documents for each question in each category
+          await Promise.all(
+            results.flatMap((category) =>
+              category.questions.map((questionId) =>
+                new Answer({
+                  question: questionId,
+                  gameid: createdGame._id,
+                }).save()
+              )
+            )
+          );
+
+          // 5. Update User's myHostGames array with the new game ID
+          await User.findByIdAndUpdate(
             { _id: userId },
-            {
-              myGames: GamesData,
-            },
+            { $push: { myHostGames: createdGame._id } },
             { new: true }
           );
+
+          return createdGame._id;
+        } else if (package === "premium") {
+          // 1. Find categories
+          const results = await Category.find({
+            _id: { $in: categoriesIds },
+          });
+          const allCategoryIds = results.map((category) => category._id);
+
+          // 2. Create New Teams
+          let team1Data = await new Team({ name: team1 }).save();
+          if (!team1Data) throw new Error("Failed to create team1");
+
+          let team2Data = await new Team({ name: team2 }).save();
+          if (!team2Data) throw new Error("Failed to create team2");
+          // 4. Create a new Game with all categories and teams
+          let createdGame = await new CreateGame({
+            GameName: gameName,
+            categories: allCategoryIds,
+            teams: [team1Data._id, team2Data._id],
+          }).save();
+
+          // 3. Create Answer documents for each question in each category
+          await Promise.all(
+            results.flatMap((category) =>
+              category.questions.map((questionId) =>
+                new Answer({
+                  question: questionId,
+                  gameid: createdGame._id,
+                }).save()
+              )
+            )
+          );
+
+          // 5. Update User's myHostGames array with the new game ID
+          await User.findByIdAndUpdate(
+            { _id: userId },
+            { $push: { myHostGames: createdGame._id } },
+            { new: true }
+          );
+
+          return createdGame._id;
+        } else if (package === "elite") {
+          // 1. Find categories
+          const results = await Category.find({
+            _id: { $in: categoriesIds },
+          });
+          const allCategoryIds = results.map((category) => category._id);
+
+          // 2. Create New Teams
+          let team1Data = await new Team({ name: team1 }).save();
+          if (!team1Data) throw new Error("Failed to create team1");
+
+          let team2Data = await new Team({ name: team2 }).save();
+          if (!team2Data) throw new Error("Failed to create team2");
+          // 4. Create a new Game with all categories and teams
+          let createdGame = await new CreateGame({
+            GameName: gameName,
+            categories: allCategoryIds,
+            teams: [team1Data._id, team2Data._id],
+          }).save();
+
+          // 3. Create Answer documents for each question in each category
+          await Promise.all(
+            results.flatMap((category) =>
+              category.questions.map((questionId) =>
+                new Answer({
+                  question: questionId,
+                  gameid: createdGame._id,
+                }).save()
+              )
+            )
+          );
+
+          // 5. Update User's myHostGames array with the new game ID
+          await User.findByIdAndUpdate(
+            { _id: userId },
+            { $push: { myHostGames: createdGame._id } },
+            { new: true }
+          );
+
+          return createdGame._id;
+        } else if (package === "diamond") {
+          console.log("You are inside diamond package.");
+          // 1. Find categories
+          const results = await Category.find({
+            _id: { $in: categoriesIds },
+          });
+          const allCategoryIds = results.map((category) => category._id);
+
+          // 2. Create New Teams
+          let team1Data = await new Team({ name: team1 }).save();
+          if (!team1Data) throw new Error("Failed to create team1");
+
+          let team2Data = await new Team({ name: team2 }).save();
+          if (!team2Data) throw new Error("Failed to create team2");
+          // 4. Create a new Game with all categories and teams
+          let createdGame = await new CreateGame({
+            GameName: gameName,
+            categories: allCategoryIds,
+            teams: [team1Data._id, team2Data._id],
+          }).save();
+
+          // 3. Create Answer documents for each question in each category
+          await Promise.all(
+            results.flatMap((category) =>
+              category.questions.map((questionId) =>
+                new Answer({
+                  question: questionId,
+                  gameid: createdGame._id,
+                }).save()
+              )
+            )
+          );
+
+          // 5. Update User's myHostGames array with the new game ID
+          await User.findByIdAndUpdate(
+            { _id: userId },
+            { $push: { myHostGames: createdGame._id } },
+            { new: true }
+          );
+          console.log("createdGame._id", createdGame._id);
+          return createdGame._id;
         }
       } catch (error) {
         console.error("Error in createGame", error);
       }
     };
 
-    console.log(
-      "findUserData. currentPackage ",
-      findUserData.currentPackage.includes("free")
-    );
     //  we will first check if user has the free package used,
     if (findUserData.currentPackage.includes("free")) {
       if (findUserData.myHostGames.length < 1) {
@@ -430,39 +643,65 @@ exports.createGame = async (req, res) => {
         });
       } else if (findUserData.myHostGames.length === 1) {
         console.log("LimitReached for Free Package");
-        res.json({ success: false, message: "Limit Reached For Free Package" });
+        res.json({
+          limitReached: true,
+          message: "Limit Reached For Free Package",
+        });
       }
     } else if (findUserData.currentPackage.includes("basic")) {
       if (findUserData.myHostGames.length < 2) {
         // Now you can create a game
-        createYourGame(2, "basic");
+        let gameid = await createYourGame(2, "basic");
+        res.json({
+          success: true,
+          message: "Game was created successfully.",
+          gameid,
+        });
       } else if (findUserData.myHostGames.length === 2) {
         console.log("LimitReached for Basic Package");
-        res.json({ message: "LimitReachedBasicPackage" });
+        res.json({ limitReached: true, message: "LimitReachedBasicPackage" });
       }
     } else if (findUserData.currentPackage.includes("premium")) {
       if (findUserData.myHostGames.length < 3) {
         // Now you can create a game
-        createYourGame(3, "premium");
+        let gameid = await createYourGame(3, "premium");
+        res.json({
+          success: true,
+          message: "Game was created successfully.",
+          gameid,
+        });
       } else if (findUserData.myHostGames.length === 3) {
         console.log("LimitReached for Premium Package");
-        res.json({ message: "LimitReachedPremiumPackage" });
+        res.json({ limitReached: true, message: "LimitReachedPremiumPackage" });
       }
     } else if (findUserData.currentPackage.includes("elite")) {
       if (findUserData.myHostGames.length < 5) {
         // Now you can create a game
-        createYourGame(5, "elite");
+        let gameid = await createYourGame(5, "elite");
+        res.json({
+          success: true,
+          message: "Game was created successfully.",
+          gameid,
+        });
       } else if (findUserData.myHostGames.length === 5) {
         console.log("LimitReached for Elite Package");
-        res.json({ message: "LimitReachedElitePackage" });
+        res.json({ limitReached: true, message: "LimitReachedElitePackage" });
       }
     } else if (findUserData.currentPackage.includes("diamond")) {
       if (findUserData.myHostGames.length < 11) {
         // Now you can create a game
-        createYourGame(11, "diamond");
+        let gameid = await createYourGame(11, "diamond");
+        res.json({
+          success: true,
+          message: "Game was created successfully.",
+          gameid,
+        });
       } else if (findUserData.myHostGames.length === 11) {
         console.log("LimitReached for dimond Package");
-        res.json({ message: "LimitReachedDiamondPackage" });
+        res.json({
+          limitReached: true,
+          message: "Limit Reached DiamondPackage",
+        });
       }
     }
   } catch (error) {
@@ -523,17 +762,20 @@ exports.startovergame = async (req, res) => {
   try {
     let { userid, gameid } = req.params;
     // First, find data of this user
-    let findUserData = await User.findOne({ _id: userid });
-
-    if (!findUserData) {
+    let updateGame = await Answer.updateMany(
+      { gameid },
+      { answered: false },
+      { new: true }
+    );
+    if (!updateGame) {
       console.log(`User not found for userid: ${userid}`);
-      return res.json({ success: false, message: "User not found" });
+      return res.json({ success: false, message: "Game not found" });
+    } else {
+      return res.json({ success: true });
     }
-    // console.log("findUserData", findUserData);
-    // We will first find our data for put.
   } catch (error) {
-    console.log("Error in createGame", error);
-    res.json({ success: false, message: "Error in creating game" });
+    console.log("Error in startovergame", error);
+    res.json({ success: false, message: "Error in startovergame" });
   }
 };
 

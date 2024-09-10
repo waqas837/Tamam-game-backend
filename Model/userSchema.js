@@ -108,6 +108,7 @@ const QuestionSchema = new mongoose.Schema({
   points: String,
   question: String,
   answer: String,
+  hint: String,
   image: String,
   document: String,
   // Additional fields specific to Question
