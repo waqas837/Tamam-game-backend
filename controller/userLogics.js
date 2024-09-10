@@ -373,6 +373,7 @@ exports.getAllQuestionsForUser = async (req, res) => {
             image: answer.question.image,
             document: answer.question.document,
             answered: answer.answered,
+            hint: answer.question.hint,
             answer: answer.question.answer,
           }));
 
@@ -863,6 +864,15 @@ exports.useauxilarymean = async (req, res) => {
         },
       }
     );
+    console.log("req.body.mean", req.body.mean);
+    // use of axilairy means
+    if (req.body.mean === "rating") {
+      // double the team score
+      await Team.findByIdAndUpdate(
+        { _id: req.body.teamId }, // Filter by document ID
+        { $mul: { score: 2 } } // Multiply 'count' field by 2
+      );
+    }
     res.json({ success: true });
   } catch (error) {
     console.log(error);
